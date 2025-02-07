@@ -1,0 +1,5 @@
+train: C:/Users/demet/augmented_images/images/train
+val: C:/Users/demet/augmented_images/images/val
+
+nc: 1
+names: ["hat"]
