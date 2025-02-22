@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tello Drone</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background: linear-gradient(135deg, #74ebd5, #acb6e5);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+        }
+        .container {
+            background: white;
+            padding: 20px;
+            border-radius: 12px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+            text-align: center;
+            width: 300px;
+        }
+        h1 {
+            color: #333;
+        }
+        button {
+            background: #007bff;
+            color: white;
+            border: none;
+            padding: 12px 20px;
+            font-size: 16px;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: 0.3s ease;
+        }
+        button:hover {
+            background: #0056b3;
+        }
+        .message {
+            margin-top: 15px;
+            font-size: 14px;
+            color: green;
+        }
+    </style>
+    <script>
+        function runPython() {
+            fetch('/run_script')  // Calls the backend Python script
+            .then(response => response.text())
+            .then(data => {
+                document.getElementById("message").innerText = data;  // Show response in a message box
+            });
+        }
+    </script>
+</head>
+<body>
+    <div class="container">
+        <h1>Tello Drone</h1>
+        <button onclick="runPython()">🚁 Start Following</button>
+        <div id="message" class="message"></div>
+    </div>
+</body>
+</html>
