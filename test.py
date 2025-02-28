@@ -120,7 +120,7 @@ while cap.isOpened():
 
         # Extract face from person crop
         person_crop = sharpened[y1:y2, x1:x2]
-        # Get face encodings -> recognise the face
+        # Get face encodings -> storing the locations
         face_locations = face_recognition.face_locations(person_crop, model="hog")
         
         # Final ID assignment
@@ -142,7 +142,7 @@ while cap.isOpened():
                 for person_id, saved_encoding in face_db.items():
                     # Compare face encodings
                     match = face_recognition.compare_faces([saved_encoding], face_encoding, tolerance=0.55)
-                    # If match, assign the person ID - take the first match
+                    # If match, assign the person ID - take the first match - the one with id = 1
                     if match[0]:  
                         assigned_id = person_id
                         break
@@ -164,23 +164,6 @@ while cap.isOpened():
                     used_person_ids.add(next_person_id)
                     # Increment the ID that should be used next
                     next_person_id += 1
-
-        # Ensure stable ID mapping
-        if assigned_id is None:
-            # Get the person ID
-            assigned_id = person_id_map.get(track_id)
-            # While the next ID is used
-            while next_person_id in used_person_ids:
-                # Increment the ID -> we are trying to find a new ID to not have multiple people with the same ID
-                next_person_id += 1
-
-            # The assigned ID becomes ecqual to the person ID
-            # Since this is the first free ID
-            assigned_id = next_person_id
-            # Add this to the set of used IDs
-            used_person_ids.add(next_person_id)
-            # Increment the ID that should be used next
-            next_person_id += 1
 
         # Store mapping
         person_id_map[track_id] = assigned_id
