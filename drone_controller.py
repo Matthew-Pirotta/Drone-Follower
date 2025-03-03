@@ -4,13 +4,21 @@ import time
 from djitellopy import Tello
 from person_recognition import PersonRecognition
 from drone_follower import DroneFollower
+from hand_recognition import HandRecognition
 
 class DroneController:
+    """
+    Drone Controller loop:
+    1. Takeoff
+    2. Will hover waiting for "follow mode" signal
+    3. "follow mode" untill exit signal 
+    """
     def __init__(self,  use_laptop_camera=False):
         self.person_recognition = PersonRecognition()  
-        self.drone_follower = DroneFollower()          
+        self.drone_follower = DroneFollower()    
+        self.hand_recognition = HandRecognition()      
         self.use_laptop_camera = use_laptop_camera
-
+        self.follow_mode = False
 
         self.cap = cv2.VideoCapture(0)  # Using laptop camera
         self.tello = Tello()
@@ -34,15 +42,36 @@ class DroneController:
                 frame = self.get_frame()
                 if frame is None: continue
 
-                cx, current_area, ecx, nose_tip_x, processed_img = self.person_recognition.process_frame(frame)
-                self.drone_follower.person_follower_controller(self.tello, cx, current_area, ecx, nose_tip_x)
 
-                # Quit when 'q' is pressed
-                # Display processed frame
+                # Make copies for separate processing
+                hand_frame = frame.copy()
+                person_frame = frame.copy()
 
-                #TODO displaying processed_img doesnt work
-                cv2.imshow("Drone Tracking", processed_img)
-                if cv2.waitKey(1) & 0xFF == ord('q'):
+                #Handle hand gestures
+                hand_gesture = self.hand_recognition.process_frame(hand_frame)
+                # Merge hand tracking overlay onto the main frame
+                overlay = cv2.addWeighted(frame, 0.1, hand_frame, 0.9, 0)
+
+                match hand_gesture:
+                    case 'FOLLOW':
+                        self.follow_mode = True
+                    case 'STOP':
+                        break
+                    case 'NONE':
+                        pass
+                
+                #Process person detection
+                cx, current_area, ecx, nose_tip_x, person_frame = self.person_recognition.process_frame(person_frame)
+                if(self.follow_mode):
+                    self.drone_follower.person_follower_controller(self.tello, cx, current_area, ecx, nose_tip_x)
+                else:
+                    self.tello.send_rc_control(0, 0, 0, 0) #Hover
+
+                # Merge the person detection overlay onto the display frame
+                overlay = cv2.addWeighted(overlay, 0.5, person_frame, 0.5   , 0)
+
+                cv2.imshow("Drone Tracking", overlay)
+                if cv2.waitKey(1) & 0xFF == ord('q'): #Safty kill switch
                  break
         finally:
             # Cleanup
