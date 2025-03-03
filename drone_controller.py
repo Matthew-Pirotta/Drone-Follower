@@ -19,6 +19,7 @@ class DroneController:
         self.hand_recognition = HandRecognition()      
         self.use_laptop_camera = use_laptop_camera
         self.follow_mode = False
+        self.kill_switch = False
 
         self.cap = cv2.VideoCapture(0)  # Using laptop camera
         self.tello = Tello()
@@ -42,37 +43,16 @@ class DroneController:
                 frame = self.get_frame()
                 if frame is None: continue
 
+                hand_frame = self.process_hand_gesture(frame)
+                person_frame = self.process_person_tracking(frame)
+                overlay_frame = self.overlayImages(frame, hand_frame,person_frame)
 
-                # Make copies for separate processing
-                hand_frame = frame.copy()
-                person_frame = frame.copy()
 
-                #Handle hand gestures
-                hand_gesture = self.hand_recognition.process_frame(hand_frame)
-                # Merge hand tracking overlay onto the main frame
-                overlay = cv2.addWeighted(frame, 0.1, hand_frame, 0.9, 0)
-
-                match hand_gesture:
-                    case 'FOLLOW':
-                        self.follow_mode = True
-                    case 'STOP':
-                        break
-                    case 'NONE':
-                        pass
-                
-                #Process person detection
-                cx, current_area, ecx, nose_tip_x, person_frame = self.person_recognition.process_frame(person_frame)
-                if(self.follow_mode):
-                    self.drone_follower.person_follower_controller(self.tello, cx, current_area, ecx, nose_tip_x)
-                else:
-                    self.tello.send_rc_control(0, 0, 0, 0) #Hover
-
-                # Merge the person detection overlay onto the display frame
-                overlay = cv2.addWeighted(overlay, 0.5, person_frame, 0.5   , 0)
-
-                cv2.imshow("Drone Tracking", overlay)
+                cv2.imshow("Drone Tracking", overlay_frame)
                 if cv2.waitKey(1) & 0xFF == ord('q'): #Safty kill switch
-                 break
+                    break
+                if self.kill_switch:
+                    break
         finally:
             # Cleanup
             if not self.use_laptop_camera:
@@ -108,4 +88,39 @@ class DroneController:
         
         frame = cv2.resize(frame, (640, 480))
         return frame
+
+    def process_hand_gesture(self, frame):
+        hand_frame = frame.copy()
+
+        #Handle hand gestures
+        hand_gesture = self.hand_recognition.process_frame(hand_frame)
+
+        match hand_gesture:
+            case 'FOLLOW':
+                self.follow_mode = True
+            case 'STOP':
+                self.kill_switch = True
+            case 'NONE':
+                pass
+        
+        return hand_frame
+    
+    def process_person_tracking(self,frame):
+        person_frame = frame.copy()
+        cx, current_area, ecx, nose_tip_x, person_frame = self.person_recognition.process_frame(person_frame)
+
+        if self.follow_mode:
+            self.drone_follower.person_follower_controller(self.tello, cx, current_area, ecx, nose_tip_x)
+        else:
+            self.tello.send_rc_control(0, 0, 0, 0)  # Hover
+
+        return person_frame
+
+    def overlayImages(self, frame, hand_frame, person_frame):
+        #Merge hand tracking and person tracking overlays
+
+        overlay = cv2.addWeighted(frame, 0.1, hand_frame, 0.9, 0)
+        overlay = cv2.addWeighted(overlay, 0.5, person_frame, 0.5, 0)
+        return overlay
+
     
