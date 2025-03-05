@@ -1,5 +1,5 @@
 from djitellopy import Tello
-from person_recognition import PersonRecognition
+from test import PersonRecognition
 from drone_follower import DroneFollower
 from drone_controller import DroneController
 
