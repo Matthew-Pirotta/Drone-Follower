@@ -215,35 +215,17 @@ class PersonRecognition:
 
         return eye_center_x, nose_tip_x
 
-    def detect(self):
-        # Open webcam
-        cap = cv2.VideoCapture(0)
-        # While the webcam is open
-        while cap.isOpened():
-            # Read the next frame from the webcam
-            success, frame = cap.read()
-            if not success:
-                break
-            # Sharpen the camera 
-            sharpened = self.preprocess_frame(frame)
-            # Detect faces and bounding boxes from the frame -> this is where we will use the YOLO model to detect faces
-            detections = self.detect_people(self.model, sharpened)
-            # Update the tracker with the new detections -> this is where we will use the DeepSORT tracker to track the faces
-            tracked_objects = self.track_people(self.tracker, detections, sharpened)
-            # Process the tracked objects -> this is where we will use the other functions to track the movement of the faces
-            cx, current_area, ecx, nose_tip_x = self.process_tracked_objects(
-                tracked_objects, sharpened, self.face_db, self.person_id_map, self.used_person_ids, self.next_person_id, self.last_position, self.last_area, self.pixel_threshold
-            )
-            # Show frame
-            cv2.imshow("Tracking", sharpened)
-        
-            if cv2.waitKey(1) & 0xFF == ord('q'):
-                break
-        cap.release()
-        cv2.destroyAllWindows()
+    def detect(self, frame):
+        # Sharpen the camera 
+        sharpened = self.preprocess_frame(frame)
+        # Detect faces and bounding boxes from the frame -> this is where we will use the YOLO model to detect faces
+        detections = self.detect_people(self.model, sharpened)
+        # Update the tracker with the new detections -> this is where we will use the DeepSORT tracker to track the faces
+        tracked_objects = self.track_people(self.tracker, detections, sharpened)
+        # Process the tracked objects -> this is where we will use the other functions to track the movement of the faces
+        cx, current_area, ecx, nose_tip_x = self.process_tracked_objects(
+            tracked_objects, sharpened, self.face_db, self.person_id_map, self.used_person_ids, self.next_person_id, self.last_position, self.last_area, self.pixel_threshold
+        )
 
         return cx, current_area, ecx, nose_tip_x, sharpened
 
-if __name__ == "__main__":
-    p = PersonRecognition()
-    p.detect()

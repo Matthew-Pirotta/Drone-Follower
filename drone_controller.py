@@ -2,7 +2,7 @@ import cv2
 import time
 
 from djitellopy import Tello
-from person_recognition import PersonRecognition
+from test import PersonRecognition
 from drone_follower import DroneFollower
 
 class DroneController:
@@ -34,7 +34,7 @@ class DroneController:
                 frame = self.get_frame()
                 if frame is None: continue
 
-                cx, current_area, ecx, nose_tip_x, processed_img = self.person_recognition.process_frame(frame)
+                cx, current_area, ecx, nose_tip_x, processed_img = self.person_recognition.detect(frame)
                 self.drone_follower.person_follower_controller(self.tello, cx, current_area, ecx, nose_tip_x)
 
                 # Quit when 'q' is pressed
