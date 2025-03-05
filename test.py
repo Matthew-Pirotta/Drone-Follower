@@ -3,7 +3,7 @@ import cv2
 import numpy as np
 import face_recognition
 import logging
-import math
+# import math
 from ultralytics import YOLO
 from deep_sort_realtime.deepsort_tracker import DeepSort
 
@@ -159,31 +159,61 @@ class PersonRecognition:
                 cv2.rectangle(frame, (x1, y1), (x2, y2), (0, 255, 0), 2)
                 cv2.putText(frame, f"ID: {assigned_id}", (x1, y1 - 10), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 255, 0), 2)
                 cv2.circle(frame, (cx, cy), 5, (0, 0, 255), cv2.FILLED)
+                ecx, nose_tip_x = self.detect_head_rotation(frame)
                 # Track the movement -> this can be then changed with Matthew's code
-                last_position, last_area = self.track_movement(assigned_id, person_x, person_y, current_area, last_position, last_area, pixel_threshold)
-        return last_position, last_area
+                # last_position, last_area = self.track_movement(assigned_id, person_x, person_y, current_area, last_position, last_area, pixel_threshold)
+                return cx, current_area, ecx, nose_tip_x
+        return 0, 0, -1, -1
 
-    def track_movement(self, assigned_id, person_x, person_y, current_area, last_position, last_area, pixel_threshold):
-        # If a person had been found before - in this case with ID = 1, the first person ever seen 
-        if last_position is not None and last_area is not None and current_area > 0:
-            # Calculate distance moved in pixels
-            dx, dy = person_x - last_position[0], person_y - last_position[1]
-            # Use the Eulidean distance
-            distance_moved = math.sqrt(dx**2 + dy**2)
-            # If the distance moved is greater than the pixel threshold
-            if distance_moved > pixel_threshold:
-                # Print the movement details, the new area, the ID to ensure that it has ID=1 and the center
-                print(f'ID={assigned_id} -> Area: {current_area}, Center: ({person_x}, {person_y})')
-                print(f"Person moved {distance_moved:.2f} pixels, updating movement.")
-                # Return the updated position and the area
-                return (person_x, person_y), current_area
-        # If a person had never been found before
-        else:
-            # Print the new area and new center
-            print(f'ID={assigned_id} -> Area: {current_area}, Center: ({person_x}, {person_y})')
-            # Assign the new position and the new area that has been found to be found again when the person moves
-            return (person_x, person_y), current_area
-        return last_position, last_area
+    # def track_movement(self, assigned_id, person_x, person_y, current_area, last_position, last_area, pixel_threshold):
+    #     # If a person had been found before - in this case with ID = 1, the first person ever seen 
+    #     if last_position is not None and last_area is not None and current_area > 0:
+    #         # Calculate distance moved in pixels
+    #         dx, dy = person_x - last_position[0], person_y - last_position[1]
+    #         # Use the Eulidean distance
+    #         distance_moved = math.sqrt(dx**2 + dy**2)
+    #         # If the distance moved is greater than the pixel threshold
+    #         if distance_moved > pixel_threshold:
+    #             # Print the movement details, the new area, the ID to ensure that it has ID=1 and the center
+    #             print(f'ID={assigned_id} -> Area: {current_area}, Center: ({person_x}, {person_y})')
+    #             print(f"Person moved {distance_moved:.2f} pixels, updating movement.")
+    #             # Return the updated position and the area
+    #             return (person_x, person_y), current_area
+    #     # If a person had never been found before
+    #     else:
+    #         # Print the new area and new center
+    #         print(f'ID={assigned_id} -> Area: {current_area}, Center: ({person_x}, {person_y})')
+    #         # Assign the new position and the new area that has been found to be found again when the person moves
+    #         return (person_x, person_y), current_area
+    #     return last_position, last_area
+    
+    def detect_head_rotation(self, frame):
+        """
+        Detects head rotation by finding the eye center and nose tip.
+        Returns:
+            eye_center_x (int): X coordinate of the eye center
+            nose_tip_x (int): X coordinate of the nose tip
+        """
+        eye_center_x, nose_tip_x = -1, -1
+        face_landmarks_list = face_recognition.face_landmarks(frame)
+
+        if not face_landmarks_list:
+            return eye_center_x, nose_tip_x  
+
+        landmarks = face_landmarks_list[0]
+        left_eye = landmarks.get("left_eye", [(0, 0)])  
+        right_eye = landmarks.get("right_eye", [(0, 0)])  
+        nose_bridge = landmarks.get("nose_bridge", [(0, 0)])  
+
+        eye_center_x = (left_eye[0][0] + right_eye[-1][0]) // 2
+        eye_center_y = (left_eye[0][1] + right_eye[-1][1]) // 2
+
+        nose_tip_x = nose_bridge[-1][0]
+
+        #debugging
+        cv2.circle(frame, (eye_center_x, eye_center_y), 5, (255, 0, 0), cv2.FILLED)
+
+        return eye_center_x, nose_tip_x
 
     def detect(self):
         # Open webcam
@@ -201,7 +231,7 @@ class PersonRecognition:
             # Update the tracker with the new detections -> this is where we will use the DeepSORT tracker to track the faces
             tracked_objects = self.track_people(self.tracker, detections, sharpened)
             # Process the tracked objects -> this is where we will use the other functions to track the movement of the faces
-            self.last_position, self.last_area = self.process_tracked_objects(
+            cx, current_area, ecx, nose_tip_x = self.process_tracked_objects(
                 tracked_objects, sharpened, self.face_db, self.person_id_map, self.used_person_ids, self.next_person_id, self.last_position, self.last_area, self.pixel_threshold
             )
             # Show frame
@@ -211,6 +241,8 @@ class PersonRecognition:
                 break
         cap.release()
         cv2.destroyAllWindows()
+
+        return cx, current_area, ecx, nose_tip_x, sharpened
 
 if __name__ == "__main__":
     p = PersonRecognition()
