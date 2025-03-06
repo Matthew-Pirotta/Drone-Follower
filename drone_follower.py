@@ -10,7 +10,7 @@ IMAGE_CENTRE = IMAGE_RESOLUTION[0]//2, IMAGE_RESOLUTION[1]//2
 IMAGE_AREA = IMAGE_RESOLUTION[0] * IMAGE_RESOLUTION[1]
 TARGET_AREA_PERCENTAGE = .3 #User should take up, 30% of the screen.
 
-MOVE_MAG = 10 # Base movement magnitude at which the drone will move
+MOVE_MAG = 15 # Base movement magnitude at which the drone will move
 ROT_MAG = 10 # Base rotation magnitude at which the drone will move
 
 class DroneFollower:
@@ -51,6 +51,10 @@ class DroneFollower:
         """
         fb = 0
         lr = 0
+
+        #Person was not dectected
+        if b_area == 0:
+            return fb,lr
 
         # Move closer or further
         b_area_perc = b_area/IMAGE_AREA
@@ -93,6 +97,10 @@ class DroneFollower:
         """
         yaw = 0
 
+        #Person was detected but face features were not
+        if ecx == -1 or nose_tip_x == -1:
+            return yaw
+
         face_status = self._is_outside_tolerance(nose_tip_x, ecx, FACE_ROT_TOLERANCE)
         tolerance_delta = ecx * FACE_ROT_TOLERANCE
         print(f"nose_tip_x: {nose_tip_x}, lowerBound: {ecx - tolerance_delta}, UpperBound: {ecx + tolerance_delta} ")
@@ -112,18 +120,12 @@ class DroneFollower:
         fb = 0
         lr = 0
         yaw = 0
-
-        #Person was not dectected
-        if bArea == 0: return
-        
-        #Person was detected but features were not
-        if ecx == -1 or nose_tip_x == -1: return
         
         fb, lr = self.follow_person(cx, bArea)
         yaw = self.match_face_orientation(ecx, nose_tip_x)
 
-        print(f"lr:{lr} fb:{fb} 0, yaw:{yaw}")
+        #print(f"lr:{lr} fb:{fb} 0, yaw:{yaw}")
 
         if tello:
             #NOTE temp removed the yaw var
-            tello.send_rc_control(lr, fb, 0, 0)
+            tello.send_rc_control(lr, fb, 0, yaw)

@@ -60,6 +60,8 @@ class DroneController:
                 self.tello.end()
             cv2.destroyAllWindows()
 
+    #NOTE actuall drone height readings are innacruate 
+    #and leads to high variance in final takeoff height
     def custom_takeoff(self):
         self.tello.takeoff()
 
@@ -97,6 +99,7 @@ class DroneController:
 
         match hand_gesture:
             case 'FOLLOW':
+                print("Follow Mode enabled")
                 self.follow_mode = True
             case 'STOP':
                 self.kill_switch = True

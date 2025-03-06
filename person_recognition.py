@@ -12,7 +12,6 @@ logging.getLogger("ultralytics").setLevel(logging.WARNING)
 class PersonRecognition:
     def __init__(self):
         # Load YOLOv8 model
-        #NOTE TODO use YOLOv8n instead? to reduce launch latancy
         self.model = YOLO("yolov8n.pt", verbose=False)
 
         # Initialize DeepSORT Tracker
