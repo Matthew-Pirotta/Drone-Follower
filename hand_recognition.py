@@ -47,7 +47,7 @@ class HandRecognition:
 
         return middle_finger_up and ring_finger_up and pinky_finger_up and index_finger_curled and thumb_index_distance < 0.05
 
-    def process_frame(self, frame) -> Literal["FOLLOW", "STOP", "NONE"]:
+    def process_frame(self, frame) -> Literal["FOLLOW", "STOP", "PAUSE","NONE"]:
         """Process a single frame for hand gestures."""
         #Frame is assumed to already be pre-processed
         #frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
@@ -62,7 +62,7 @@ class HandRecognition:
                     return "FOLLOW"
                 elif self.is_ok_sign(hand_landmarks.landmark):
                     print("👌 OK!")
-                    #exit follow mode <--
+                    return "PAUSE"
                 elif self.is_rock_n_roll(hand_landmarks.landmark):
                     print("Roll sign (🤘)")
                     return "STOP"

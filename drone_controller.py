@@ -103,6 +103,8 @@ class DroneController:
                 self.follow_mode = True
             case 'STOP':
                 self.kill_switch = True
+            case 'PAUSE':
+                self.follow_mode = False
             case 'NONE':
                 pass
         
