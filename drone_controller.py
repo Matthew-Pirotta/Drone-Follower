@@ -31,9 +31,7 @@ class DroneController:
             self.cap = None
             self.tello.connect()
             self.tello.streamon()
-
-            time.sleep(2)  # Wait for the stream to stabilize
-
+            
             print(f"Battery: {self.tello.get_battery()}%")
 
     def run(self):
