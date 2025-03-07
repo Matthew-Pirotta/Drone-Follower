@@ -102,9 +102,8 @@ class DroneController:
         match hand_gesture:
             case 'FOLLOW':
                 print("Follow Mode enabled")
-                if(self.follow_mode == False){
+                if(self.follow_mode == False):
                     playsound('./audio/initFM.mp3')
-                }
                 self.follow_mode = True
             case 'STOP':
                 playsound('./audio/landing.mp3')
