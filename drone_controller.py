@@ -5,7 +5,8 @@ from djitellopy import Tello
 from person_recognition import PersonRecognition
 from drone_follower import DroneFollower
 from hand_recognition import HandRecognition
-from playsound import playsound
+import pygame
+# from playsound import playsound
 
 class DroneController:
     """
@@ -38,7 +39,12 @@ class DroneController:
     def run(self):
         try:
             if not self.use_laptop_camera:
-                playsound('./audio/liftoff.mp3')
+                pygame.mixer.init()
+                pygame.mixer.music.load("./audio/liftoff.mp3")
+                pygame.mixer.music.play()
+                while pygame.mixer.music.get_busy():
+                    pass
+                # playsound('./audio/liftoff.mp3')
                 self.custom_takeoff()
 
             while True:
@@ -102,15 +108,29 @@ class DroneController:
         match hand_gesture:
             case 'FOLLOW':
                 print("Follow Mode enabled")
-                if(self.follow_mode == False){
-                    playsound('./audio/initFM.mp3')
-                }
+                if(self.follow_mode == False): 
+                    pygame.mixer.init()
+                    pygame.mixer.music.load("./audio/initFM.mp3")
+                    pygame.mixer.music.play()
+                    while pygame.mixer.music.get_busy():
+                        pass
+                    # playsound('./audio/initFM.mp3')
                 self.follow_mode = True
             case 'STOP':
-                playsound('./audio/landing.mp3')
+                pygame.mixer.init()
+                pygame.mixer.music.load("./audio/landing.mp3")
+                pygame.mixer.music.play()
+                while pygame.mixer.music.get_busy():
+                    pass
+                # playsound('./audio/landing.mp3')
                 self.kill_switch = True
             case 'PAUSE':
-                playsound('./audio/exitFM.mp3')
+                pygame.mixer.init()
+                pygame.mixer.music.load("./audio/exitFM.mp3")
+                pygame.mixer.music.play()
+                while pygame.mixer.music.get_busy():
+                    pass
+                # playsound('./audio/exitFM.mp3')
                 self.follow_mode = False
             case 'NONE':
                 pass
