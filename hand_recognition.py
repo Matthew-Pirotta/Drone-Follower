@@ -8,7 +8,7 @@ class HandRecognition:
     def __init__(self):
         self.mp_hands = mp.solutions.hands
         self.mp_draw = mp.solutions.drawing_utils
-        self.hands = self.mp_hands.Hands(min_detection_confidence=0.3, min_tracking_confidence=0.5)
+        self.hands = self.mp_hands.Hands(min_detection_confidence=0.35, min_tracking_confidence=0.35)
 
     def distance(self, point1, point2):
         """Calculate the Euclidean distance between two points."""
