@@ -6,7 +6,6 @@ from person_recognition import PersonRecognition
 from drone_follower import DroneFollower
 from hand_recognition import HandRecognition
 import pygame
-# from playsound import playsound
 
 class DroneController:
     """
@@ -42,7 +41,6 @@ class DroneController:
                 pygame.mixer.music.play()
                 while pygame.mixer.music.get_busy():
                     pass
-                # playsound('./audio/liftoff.mp3')
                 self.custom_takeoff()
 
             while True:
@@ -112,7 +110,6 @@ class DroneController:
                     pygame.mixer.music.play()
                     while pygame.mixer.music.get_busy():
                         pass
-                    # playsound('./audio/initFM.mp3')
                 self.follow_mode = True
             case 'STOP':
                 pygame.mixer.init()
@@ -120,7 +117,6 @@ class DroneController:
                 pygame.mixer.music.play()
                 while pygame.mixer.music.get_busy():
                     pass
-                # playsound('./audio/landing.mp3')
                 self.kill_switch = True
             case 'PAUSE':
                 pygame.mixer.init()
@@ -128,7 +124,6 @@ class DroneController:
                 pygame.mixer.music.play()
                 while pygame.mixer.music.get_busy():
                     pass
-                # playsound('./audio/exitFM.mp3')
                 self.follow_mode = False
             case 'NONE':
                 pass
