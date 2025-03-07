@@ -3,7 +3,6 @@ import cv2
 import numpy as np
 import face_recognition
 import logging
-# import math
 from ultralytics import YOLO
 from deep_sort_realtime.deepsort_tracker import DeepSort
 
@@ -59,9 +58,9 @@ class PersonRecognition:
         # Use the kernel to filter the image
         return cv2.filter2D(frame, -1, kernel)
 
-    def detect_people(self, model, frame):
+    def detect_people(self, frame):
         # Run YOLOv8 inference with the sharpened image
-        results = model(frame)
+        results = self.model(frame)
         # List to hold detections
         detections = []
         # For each detection in the results
@@ -85,31 +84,33 @@ class PersonRecognition:
                         detections.append(([x1, y1, width, height], conf, 0, np.zeros((128,))))
         return detections
 
-    def track_people(self, tracker, detections, frame):
+    def track_people(self, detections, frame):
         # Update DeepSORT tracker - so the tracker will only track the detected people
-        return tracker.update_tracks(detections, frame=frame)
+        return self.tracker.update_tracks(detections, frame=frame)
 
 
-    def assign_person_id(self, face_encoding, face_db, used_person_ids, next_person_id):
+    def assign_person_id(self, face_encoding):
         # Check if this face matches a known person
-        for person_id, saved_encoding in face_db.items():
+        for person_id, saved_encoding in self.face_db.items():
             # Compare face encodings
-            if face_recognition.compare_faces([saved_encoding], face_encoding, tolerance=0.55)[0]:
-                # If there was a match return it
-                return person_id, next_person_id
+            if face_recognition.compare_faces([saved_encoding], face_encoding, tolerance=0.45)[0]:
+                distances = face_recognition.face_distance([saved_encoding], face_encoding)
+                if distances[0] < 0.55:  # Adjust threshold
+                    # If there was a match return it
+                    return person_id, self.next_person_id
         # If there was no match  
         # While the next person is in used ids
-        while next_person_id in used_person_ids:
+        while self.next_person_id in self.used_person_ids:
             # Increment to find an unused ID
-            next_person_id += 1
+            self.next_person_id += 1
         # Store face encoding in a dictionary
-        face_db[next_person_id] = face_encoding
+        self.face_db[self.next_person_id] = face_encoding
         # Add this to the set of used IDs
-        used_person_ids.add(next_person_id)
+        self.used_person_ids.add(self.next_person_id)
         # Return the assigned ID and the next available ID
-        return next_person_id, next_person_id + 1
+        return self.next_person_id, self.next_person_id + 1
 
-    def process_tracked_objects(self, tracked_objects, frame, face_db, person_id_map, used_person_ids, next_person_id):
+    def process_tracked_objects(self, tracked_objects, frame):
         # For each tracked object
         for track in tracked_objects:
             # If there is no tracking continue
@@ -139,9 +140,9 @@ class PersonRecognition:
                 # If a face was detected and recognized
                 if face_encodings:
                     # Store mapping - saved the ID that we will be using
-                    assigned_id, next_person_id = self.assign_person_id(face_encodings[0], face_db, used_person_ids, next_person_id)
+                    assigned_id, self.next_person_id = self.assign_person_id(face_encodings[0])
             # Store mapping
-            person_id_map[track_id] = assigned_id
+            self.person_id_map[track_id] = assigned_id
             # Only track and draw for ID = 1
             if assigned_id == 1:
                 current_area = area
@@ -185,12 +186,12 @@ class PersonRecognition:
         # Sharpen the camera 
         sharpened = self.preprocess_frame(frame)
         # Detect faces and bounding boxes from the frame -> this is where we will use the YOLO model to detect faces
-        detections = self.detect_people(self.model, sharpened)
+        detections = self.detect_people(sharpened)
         # Update the tracker with the new detections -> this is where we will use the DeepSORT tracker to track the faces
-        tracked_objects = self.track_people(self.tracker, detections, sharpened)
+        tracked_objects = self.track_people(detections, sharpened)
         # Process the tracked objects -> this is where we will use the other functions to track the movement of the faces
         cx, current_area, ecx, nose_tip_x = self.process_tracked_objects(
-            tracked_objects, sharpened, self.face_db, self.person_id_map, self.used_person_ids, self.next_person_id
+            tracked_objects, sharpened
         )
 
         return cx, current_area, ecx, nose_tip_x, sharpened
