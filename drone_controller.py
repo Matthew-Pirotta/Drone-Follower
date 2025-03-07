@@ -2,7 +2,7 @@ import cv2
 import time
 
 from djitellopy import Tello
-from test import PersonRecognition
+from person_recognition import PersonRecognition
 from drone_follower import DroneFollower
 from hand_recognition import HandRecognition
 
