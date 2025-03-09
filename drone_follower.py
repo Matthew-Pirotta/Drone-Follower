@@ -16,9 +16,9 @@ ROT_MAG = 10 # Base rotation magnitude at which the drone will move
 class DroneFollower:
     def __init__(self):
         # PD controllers for movement and rotation (no Ki term)
-        self.fb_pd = PDController(Kp=0.3, Kd=0.1, setpoint=TARGET_AREA_PERCENTAGE)
-        self.lr_pd = PDController(Kp=0.3, Kd=0.1, setpoint=IMAGE_CENTRE[0])
-        self.yaw_pd = PDController(Kp=0.5, Kd=0.1, setpoint=0)
+        self.fb_pd = PDController(Kp=0.2, Kd=0.1, setpoint=TARGET_AREA_PERCENTAGE)
+        self.lr_pd = PDController(Kp=0.2, Kd=0.2, setpoint=IMAGE_CENTRE[0])
+        self.yaw_pd = PDController(Kp=0.1, Kd=0.1, setpoint=0)
 
     def follow_person(self, cx: int, b_area: int) -> tuple:
         """
@@ -38,7 +38,7 @@ class DroneFollower:
 
         # Compute PD outputs
         fb = self.fb_pd.compute(b_area_perc)  # Forward/Backward movement
-        lr = self.lr_pd.compute(cx)  # Left/Right movement
+        lr = -self.lr_pd.compute(cx)  # Left/Right movement
 
         return fb, lr
 
@@ -62,7 +62,7 @@ class DroneFollower:
     def person_follower_controller(self, tello: Tello, cx: int, bArea: int, ecx: int, nose_tip_x: int):
         fb, lr, yaw = 0, 0, 0
 
-
+        print(f"bArea: {(bArea / IMAGE_AREA):.2f} target bArea:{TARGET_AREA_PERCENTAGE} \tcx:{cx}  target cx: {0}")
         fb, lr = self.follow_person(cx, bArea)
         yaw = self.match_face_orientation(ecx, nose_tip_x)
 

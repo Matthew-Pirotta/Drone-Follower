@@ -1,7 +1,7 @@
 import time
 
 class PDController:
-    def __init__(self, Kp, Kd, setpoint=0.0, min_output=5, max_output=20):
+    def __init__(self, Kp, Kd, setpoint=0.0, min_output=5, max_output=15):
         self.Kp = Kp  # Proportional gain
         self.Kd = Kd  # Derivative gain
         self.setpoint = setpoint  # Desired value
