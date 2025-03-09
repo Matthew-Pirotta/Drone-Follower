@@ -14,12 +14,12 @@ class DroneController:
     2. Will hover waiting for "follow mode" signal
     3. "follow mode" untill exit signal 
     """
-    def __init__(self, use_laptop_camera=False):
+    def __init__(self, use_laptop_camera=False, follow_mode_on_startup = False):
         self.person_recognition = PersonRecognition()  
         self.drone_follower = DroneFollower()    
         self.hand_recognition = HandRecognition()      
         self.use_laptop_camera = use_laptop_camera
-        self.follow_mode = False
+        self.follow_mode = follow_mode_on_startup
         self.kill_switch = False
 
         self.cap = cv2.VideoCapture(0)  # Using laptop camera
@@ -71,7 +71,7 @@ class DroneController:
 
         # 175 is average height,
         # but tello height reading seems to be innacurate and reads this height as 100
-        while self.tello.get_height() < 120: 
+        while self.tello.get_height() < 130: 
             print(f"current height: {self.tello.get_height()}")
             self.tello.send_rc_control(0, 0, 20, 0)  # Move up at speed 20 cm/s
             time.sleep(0.5)
@@ -146,7 +146,7 @@ class DroneController:
     def overlayImages(self, frame, hand_frame, person_frame):
         #Merge hand tracking and person tracking overlays
 
-        overlay = cv2.addWeighted(frame, 0.1, hand_frame, 0.9, 0)
+        overlay = cv2.addWeighted(frame, 0.1, hand_frame, 0.95, 0)
         overlay = cv2.addWeighted(overlay, 0.5, person_frame, 0.5, 0)
         return overlay
 

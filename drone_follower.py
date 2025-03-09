@@ -3,14 +3,14 @@ from djitellopy import Tello
 
 AREA_TOLERANCE = .1
 CENTER_X_TOLERANCE = .1 # The user should be within 10% of centre of the screen 
-FACE_ROT_TOLERANCE = .04
+FACE_ROT_TOLERANCE = .02
 
 IMAGE_RESOLUTION = (640,480) #TELLO DRONE: (1280,780)? My Laptop: (640,480)
 IMAGE_CENTRE = IMAGE_RESOLUTION[0]//2, IMAGE_RESOLUTION[1]//2 
 IMAGE_AREA = IMAGE_RESOLUTION[0] * IMAGE_RESOLUTION[1]
 TARGET_AREA_PERCENTAGE = .3 #User should take up, 30% of the screen.
 
-MOVE_MAG = 15 # Base movement magnitude at which the drone will move
+MOVE_MAG = 10 # Base movement magnitude at which the drone will move
 ROT_MAG = 10 # Base rotation magnitude at which the drone will move
 
 class DroneFollower:
@@ -107,10 +107,10 @@ class DroneFollower:
         
         if face_status == "lower":
             #Rotate Left, Person turned right
-            yaw = -ROT_MAG
+            yaw = ROT_MAG
         elif face_status == "higher":
             #Rotate Right, Person turned left
-            yaw = ROT_MAG
+            yaw = -ROT_MAG
         elif face_status == "within":
             print("Rotation Centered")
                     
