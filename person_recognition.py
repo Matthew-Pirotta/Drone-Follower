@@ -71,8 +71,8 @@ class PersonRecognition:
                 cls = int(box.cls[0])
                 # Get the confidence score
                 conf = box.conf[0].item()
-                # Class 0 = "person", confidence > 80%
-                if cls == 0 and conf > 0.8:
+                # Class 0 = "person", confidence > 60%
+                if cls == 0 and conf > 0.6:
                     # Bounding box
                     x1, y1, x2, y2 = map(int, box.xyxy[0])
                     # Calculate the width and the height

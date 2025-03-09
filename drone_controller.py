@@ -14,7 +14,7 @@ class DroneController:
     2. Will hover waiting for "follow mode" signal
     3. "follow mode" untill exit signal 
     """
-    def __init__(self,  use_laptop_camera=False):
+    def __init__(self, use_laptop_camera=False):
         self.person_recognition = PersonRecognition()  
         self.drone_follower = DroneFollower()    
         self.hand_recognition = HandRecognition()      
@@ -119,11 +119,13 @@ class DroneController:
                     pass
                 self.kill_switch = True
             case 'PAUSE':
-                pygame.mixer.init()
-                pygame.mixer.music.load("./audio/exitFM.mp3")
-                pygame.mixer.music.play()
-                while pygame.mixer.music.get_busy():
-                    pass
+                print("Follow Mode disabled")
+                if(self.follow_mode):
+                    pygame.mixer.init()
+                    pygame.mixer.music.load("./audio/exitFM.mp3")
+                    pygame.mixer.music.play()
+                    while pygame.mixer.music.get_busy():
+                        pass
                 self.follow_mode = False
             case 'NONE':
                 pass
