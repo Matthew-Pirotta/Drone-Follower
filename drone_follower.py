@@ -1,9 +1,9 @@
-from pd_controller import PDController
+from typing import Literal
 from djitellopy import Tello
 
 AREA_TOLERANCE = .1
 CENTER_X_TOLERANCE = .1 # The user should be within 10% of centre of the screen 
-FACE_ROT_TOLERANCE = .04
+FACE_ROT_TOLERANCE = .02
 
 IMAGE_RESOLUTION = (640,480) #TELLO DRONE: (1280,780)? My Laptop: (640,480)
 IMAGE_CENTRE = IMAGE_RESOLUTION[0]//2, IMAGE_RESOLUTION[1]//2 
@@ -14,59 +14,118 @@ MOVE_MAG = 10 # Base movement magnitude at which the drone will move
 ROT_MAG = 10 # Base rotation magnitude at which the drone will move
 
 class DroneFollower:
-    def __init__(self):
-        # PD controllers for movement and rotation (no Ki term)
-        self.fb_pd = PDController(Kp=0.2, Kd=0.1, setpoint=TARGET_AREA_PERCENTAGE)
-        self.lr_pd = PDController(Kp=0.2, Kd=0.2, setpoint=IMAGE_CENTRE[0])
-        self.yaw_pd = PDController(Kp=0.1, Kd=0.1, setpoint=0)
 
-    def follow_person(self, cx: int, b_area: int) -> tuple:
+    def __init__(self):
+        pass
+
+    def _is_outside_tolerance(self, value: float, target: float, tolerance: float) -> Literal["lower", "higher", "within"]:
+        """
+        Checks if a value is outside a given tolerance range around a target.
+
+        Args:
+            value: The value to check.
+            target: The central reference value.
+            tolerance: The tolerance percentage
+
+        Returns:
+            Literal["lower", "higher", "within"]: Whether the value is below, above, or within tolerance.
+        """
+
+        tolerance_delta = target * tolerance
+        if value < target - tolerance_delta:
+            return "lower"
+        elif value > target + tolerance_delta:
+            return "higher"
+        return "within"
+
+
+    def follow_person(self, cx:int, b_area:int) -> tuple:
         """
         Args:
-            cx: Centroid x-coordinate.
-            b_area: Bounding box area of the person.
+            cx: Centroid coordinate-x.
+            bAarea: Person bounding box area
 
         Returns:
             fb: forward/backward velocity
             lr: left/right velocity
         """
+        fb = 0
+        lr = 0
+
+        #Person was not dectected
         if b_area == 0:
-            return 0,0
+            return fb,lr
 
-        # Normalize bounding box area
-        b_area_perc = b_area / IMAGE_AREA
+        # Move closer or further
+        b_area_perc = b_area/IMAGE_AREA
+        area_status = self._is_outside_tolerance(b_area_perc, TARGET_AREA_PERCENTAGE, AREA_TOLERANCE)
+        tolerance_delta = TARGET_AREA_PERCENTAGE * AREA_TOLERANCE
+        print(f"b_area_perc: {b_area_perc:3f}, lowerBound: {(TARGET_AREA_PERCENTAGE - tolerance_delta):3f}, UpperBound: {(TARGET_AREA_PERCENTAGE + tolerance_delta):3f}")
 
-        # Compute PD outputs
-        fb = self.fb_pd.compute(b_area_perc)  # Forward/Backward movement
-        lr = -self.lr_pd.compute(cx)  # Left/Right movement
+        if area_status == "lower":
+            print("Move closer")
+            fb = MOVE_MAG
+        elif area_status == "higher":
+            print("Move further away")
+            fb = -MOVE_MAG
+        elif area_status == "within":
+            print("Within FB Range ")
 
+
+        # Move left or right
+        x_status = self._is_outside_tolerance(cx, IMAGE_CENTRE[0], CENTER_X_TOLERANCE)
+        tolerance_delta = IMAGE_CENTRE[0]* CENTER_X_TOLERANCE
+        print(f"cx: {cx}, lowerBound: {IMAGE_CENTRE[0] - tolerance_delta}, UpperBound: {IMAGE_CENTRE[0] + tolerance_delta} ")
+        if x_status == "lower":
+            print("Move left")
+            lr = -MOVE_MAG
+        elif x_status == "higher":
+            print("Move right")
+            lr = MOVE_MAG
+        
         return fb, lr
 
-    def match_face_orientation(self, ecx: int, nose_tip_x: int) -> int:
+
+    def match_face_orientation(self, ecx:int, nose_tip_x:int) -> int:
         """
         Args:
             ecx: eye centroid x-coordinate.
-            nose_tip_x: nose tip x-coordinate.
-
-        Returns:
-            yaw: yaw rotation velocity
+            nose_tip_x: nose tip x-coordinate
+            
+            Returns:
+                yaw: yaw rotation velocity
         """
+        yaw = 0
+
+        #Person was detected but face features were not
         if ecx == -1 or nose_tip_x == -1:
-            return 0
+            return yaw
 
-        error = nose_tip_x - ecx  # Difference between nose and eye center
-        yaw = self.yaw_pd.compute(error)  # Compute PD yaw adjustment
-
+        face_status = self._is_outside_tolerance(nose_tip_x, ecx, FACE_ROT_TOLERANCE)
+        tolerance_delta = ecx * FACE_ROT_TOLERANCE
+        print(f"nose_tip_x: {nose_tip_x}, lowerBound: {ecx - tolerance_delta}, UpperBound: {ecx + tolerance_delta} ")
+        
+        if face_status == "lower":
+            #Rotate Left, Person turned right
+            yaw = ROT_MAG
+        elif face_status == "higher":
+            #Rotate Right, Person turned left
+            yaw = -ROT_MAG
+        elif face_status == "within":
+            print("Rotation Centered")
+                    
         return yaw
 
-    def person_follower_controller(self, tello: Tello, cx: int, bArea: int, ecx: int, nose_tip_x: int):
-        fb, lr, yaw = 0, 0, 0
-
-        print(f"bArea: {(bArea / IMAGE_AREA):.2f} target bArea:{TARGET_AREA_PERCENTAGE} \tcx:{cx}  target cx: {0}")
+    def person_follower_controller(self, tello:Tello, cx:int, bArea, ecx:int, nose_tip_x:int):
+        fb = 0
+        lr = 0
+        yaw = 0
+        
         fb, lr = self.follow_person(cx, bArea)
         yaw = self.match_face_orientation(ecx, nose_tip_x)
 
-        print(f"lr:{lr} fb:{fb} yaw:{yaw}")
+        #print(f"lr:{lr} fb:{fb} 0, yaw:{yaw}")
 
         if tello:
-            tello.send_rc_control(lr, fb, 0, yaw)  # Send PD-controlled movements
+            #NOTE temp removed the yaw var
+            tello.send_rc_control(lr, fb, 0, yaw)
