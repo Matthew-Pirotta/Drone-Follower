@@ -134,10 +134,10 @@ class DroneController:
     
     def process_person_tracking(self,frame):
         person_frame = frame.copy()
-        cx, current_area, ecx, nose_tip_x, person_frame = self.person_recognition.detect(person_frame)
+        cx, current_area, ecx, nose_tip_x, head_y, person_frame = self.person_recognition.detect(person_frame)
 
         if self.follow_mode:
-            self.drone_follower.person_follower_controller(self.tello, cx, current_area, ecx, nose_tip_x)
+            self.drone_follower.person_follower_controller(self.tello, cx, current_area, ecx, nose_tip_x, head_y)
         else:
             self.tello.send_rc_control(0, 0, 0, 0)  # Hover
 

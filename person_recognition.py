@@ -42,7 +42,7 @@ class PersonRecognition:
             max_iou_distance=0.5,
             # The confidence it has to say that they are the same person
             # The maximum cosine distance between feature embeddings to consider two detections as the same object.
-            max_cosine_distance=0.4,
+            max_cosine_distance=0.6,
             # Specifies the model used for feature extraction
             embedder_model_name="mobilenetv2",
             # Enables half-precision floating point (FP16) computations.
@@ -93,9 +93,9 @@ class PersonRecognition:
         # Check if this face matches a known person
         for person_id, saved_encoding in self.face_db.items():
             # Compare face encodings
-            if face_recognition.compare_faces([saved_encoding], face_encoding, tolerance=0.45)[0]:
+            if face_recognition.compare_faces([saved_encoding], face_encoding, tolerance=0.7)[0]:
                 distances = face_recognition.face_distance([saved_encoding], face_encoding)
-                if distances[0] < 0.55:  # Adjust threshold
+                if distances[0] < 0.7:  # Adjust threshold
                     # If there was a match return it
                     return person_id, self.next_person_id
         # If there was no match  
@@ -151,8 +151,8 @@ class PersonRecognition:
                 cv2.putText(frame, f"ID: {assigned_id}", (x1, y1 - 10), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 255, 0), 2)
                 cv2.circle(frame, (cx, cy), 5, (0, 0, 255), cv2.FILLED)
                 ecx, nose_tip_x = self.detect_head_rotation(frame)
-                return cx, current_area, ecx, nose_tip_x
-        return 0, 0, -1, -1
+                return cx, current_area, ecx, nose_tip_x, y1
+        return 0, 0, -1, -1, -1
     
     def detect_head_rotation(self, frame):
         """
@@ -190,9 +190,9 @@ class PersonRecognition:
         # Update the tracker with the new detections -> this is where we will use the DeepSORT tracker to track the faces
         tracked_objects = self.track_people(detections, sharpened)
         # Process the tracked objects -> this is where we will use the other functions to track the movement of the faces
-        cx, current_area, ecx, nose_tip_x = self.process_tracked_objects(
+        cx, current_area, ecx, nose_tip_x, y1 = self.process_tracked_objects(
             tracked_objects, sharpened
         )
 
-        return cx, current_area, ecx, nose_tip_x, sharpened
+        return cx, current_area, ecx, nose_tip_x, y1, sharpened
 

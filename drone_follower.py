@@ -4,11 +4,15 @@ from djitellopy import Tello
 AREA_TOLERANCE = .1
 CENTER_X_TOLERANCE = .1 # The user should be within 10% of centre of the screen 
 FACE_ROT_TOLERANCE = .02
+HEIGHT_TOLERANCE = .2
+
 
 IMAGE_RESOLUTION = (640,480) #TELLO DRONE: (1280,780)? My Laptop: (640,480)
 IMAGE_CENTRE = IMAGE_RESOLUTION[0]//2, IMAGE_RESOLUTION[1]//2 
 IMAGE_AREA = IMAGE_RESOLUTION[0] * IMAGE_RESOLUTION[1]
+
 TARGET_AREA_PERCENTAGE = .3 #User should take up, 30% of the screen.
+TARGET_Y = IMAGE_RESOLUTION[1] * 0.25  # Target head position, 25% from top
 
 MOVE_MAG = 10 # Base movement magnitude at which the drone will move
 ROT_MAG = 10 # Base rotation magnitude at which the drone will move
@@ -63,13 +67,14 @@ class DroneFollower:
         print(f"b_area_perc: {b_area_perc:3f}, lowerBound: {(TARGET_AREA_PERCENTAGE - tolerance_delta):3f}, UpperBound: {(TARGET_AREA_PERCENTAGE + tolerance_delta):3f}")
 
         if area_status == "lower":
-            print("Move closer")
+           # print("Move closer")
             fb = MOVE_MAG
         elif area_status == "higher":
-            print("Move further away")
+            #print("Move further away")
             fb = -MOVE_MAG
         elif area_status == "within":
-            print("Within FB Range ")
+            #print("Within FB Range ")
+            pass
 
 
         # Move left or right
@@ -112,20 +117,54 @@ class DroneFollower:
             #Rotate Right, Person turned left
             yaw = -ROT_MAG
         elif face_status == "within":
-            print("Rotation Centered")
+           # print("Rotation Centered")
+           pass
                     
         return yaw
 
-    def person_follower_controller(self, tello:Tello, cx:int, bArea, ecx:int, nose_tip_x:int):
+    def follow_person_height(self, y1: int) -> int:
+        """
+        Adjusts the drone's height to keep the camera slightly above the person's head.
+
+        Args:
+            y1: The y-coordinate of the top of the detected person's bounding box.
+
+        Returns:
+            ud: up/down velocity
+        """
+        ud = 0
+
+        if y1 == -1:
+            return ud  # No person detected, no height adjustment
+        
+        y_status = self._is_outside_tolerance(y1, TARGET_Y, HEIGHT_TOLERANCE)
+        tolerance_delta = TARGET_Y * AREA_TOLERANCE
+        print(f"y1: {y1}, lowerBound: {TARGET_Y - tolerance_delta}, UpperBound: {TARGET_Y + tolerance_delta}")
+
+        if y_status == "lower":
+            print("Move down")
+            ud = -MOVE_MAG  # Person is too high, move down
+        elif y_status == "higher":
+            print("Move up")
+            ud = MOVE_MAG  # Person is too low, move up
+        else:
+            print("Height is within range")
+
+        return ud
+
+
+    def person_follower_controller(self, tello:Tello, cx:int, bArea, ecx:int, nose_tip_x:int, head_y:int):
         fb = 0
         lr = 0
         yaw = 0
+        ud = 0
         
         fb, lr = self.follow_person(cx, bArea)
         yaw = self.match_face_orientation(ecx, nose_tip_x)
+        ud = self.follow_person_height(head_y)  # Adjust height based on head position
 
         #print(f"lr:{lr} fb:{fb} 0, yaw:{yaw}")
 
         if tello:
             #NOTE temp removed the yaw var
-            tello.send_rc_control(lr, fb, 0, yaw)
+            tello.send_rc_control(lr, fb, ud, yaw)
