@@ -1,14 +1,15 @@
 from typing import Literal
 from djitellopy import Tello
 
+#NOTE make smaller to make more sensitive, and higher less sensitive (i.e accept a large range)
 AREA_TOLERANCE = .1
-CENTER_X_TOLERANCE = .1 # The user should be within 10% of centre of the screen 
-FACE_ROT_TOLERANCE = .02
+CENTER_X_TOLERANCE = .15 # The user should be within 10% of centre of the screen 
+FACE_ROT_TOLERANCE = .02 
 
-IMAGE_RESOLUTION = (640,480) #TELLO DRONE: (1280,780)? My Laptop: (640,480)
+IMAGE_RESOLUTION = (640,480) #TODO NOTE TELLO DRONE: (1280,780)? My Laptop: (640,480)
 IMAGE_CENTRE = IMAGE_RESOLUTION[0]//2, IMAGE_RESOLUTION[1]//2 
 IMAGE_AREA = IMAGE_RESOLUTION[0] * IMAGE_RESOLUTION[1]
-TARGET_AREA_PERCENTAGE = .3 #User should take up, 30% of the screen.
+TARGET_AREA_PERCENTAGE = .25 #User should take up, 25% of the screen.
 
 MOVE_MAG = 10 # Base movement magnitude at which the drone will move
 ROT_MAG = 10 # Base rotation magnitude at which the drone will move
