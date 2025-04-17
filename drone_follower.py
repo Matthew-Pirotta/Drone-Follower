@@ -1,10 +1,10 @@
 from typing import Literal
 from djitellopy import Tello
 
-#NOTE make smaller to make more sensitive, and higher less sensitive (i.e accept a large range)
+#NOTE make smaller value - more sensitive, and higher value - less sensitive (i.e accept a large range)
 AREA_TOLERANCE = .1
 CENTER_X_TOLERANCE = .15 # The user should be within 10% of centre of the screen 
-FACE_ROT_TOLERANCE = .02 
+FACE_ROT_TOLERANCE = .01
 
 IMAGE_RESOLUTION = (640,480) #TODO NOTE TELLO DRONE: (1280,780)? My Laptop: (640,480)
 IMAGE_CENTRE = IMAGE_RESOLUTION[0]//2, IMAGE_RESOLUTION[1]//2 
@@ -102,17 +102,21 @@ class DroneFollower:
         if ecx == -1 or nose_tip_x == -1:
             return yaw
 
-        face_status = self._is_outside_tolerance(nose_tip_x, ecx, FACE_ROT_TOLERANCE)
-        tolerance_delta = ecx * FACE_ROT_TOLERANCE
+
+        #NOTE face rotation needs a custom tolerance delta, as ecx changes.
+        #and if the person rotates left i.e a lower ecx value, the tolerance delta will also smaller 
+        tolerance_delta = IMAGE_RESOLUTION[0] * FACE_ROT_TOLERANCE
         print(f"nose_tip_x: {nose_tip_x}, lowerBound: {ecx - tolerance_delta}, UpperBound: {ecx + tolerance_delta} ")
-        
-        if face_status == "lower":
-            #Rotate Left, Person turned right
+
+        if nose_tip_x < ecx - tolerance_delta:
             yaw = ROT_MAG
-        elif face_status == "higher":
-            #Rotate Right, Person turned left
+            print("Rotate Left")
+
+        elif nose_tip_x > ecx + tolerance_delta:
             yaw = -ROT_MAG
-        elif face_status == "within":
+            print("Rotate Right")
+
+        else:
             print("Rotation Centered")
                     
         return yaw
