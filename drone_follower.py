@@ -6,7 +6,7 @@ AREA_TOLERANCE = .1
 CENTER_X_TOLERANCE = .15 # The user should be within 10% of centre of the screen 
 FACE_ROT_TOLERANCE = .01
 
-IMAGE_RESOLUTION = (640,480) #TODO NOTE TELLO DRONE: (1280,780)? My Laptop: (640,480)
+IMAGE_RESOLUTION = (640,480)
 IMAGE_CENTRE = IMAGE_RESOLUTION[0]//2, IMAGE_RESOLUTION[1]//2 
 IMAGE_AREA = IMAGE_RESOLUTION[0] * IMAGE_RESOLUTION[1]
 TARGET_AREA_PERCENTAGE = .25 #User should take up, 25% of the screen.
@@ -132,5 +132,4 @@ class DroneFollower:
         #print(f"lr:{lr} fb:{fb} 0, yaw:{yaw}")
 
         if tello:
-            #NOTE temp removed the yaw var
             tello.send_rc_control(lr, fb, 0, yaw)

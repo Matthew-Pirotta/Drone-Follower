@@ -70,7 +70,7 @@ class DroneController:
         self.tello.takeoff()
 
         # 175 is average height,
-        # but tello height reading seems to be innacurate and reads this height as 100
+        # but tello height reading seems to be innacurate and reads this height as 130
         while self.tello.get_height() < 130: 
             print(f"current height: {self.tello.get_height()}")
             self.tello.send_rc_control(0, 0, 20, 0)  # Move up at speed 20 cm/s
